@@ -601,9 +601,9 @@ private fun AiProfileMatchCard(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        color = PrimaryContainer.copy(alpha = 0.65f),
-        border = BorderStroke(1.dp, Primary.copy(alpha = 0.15f)),
-        shadowElevation = 0.5.dp
+        color = Color(0xFFEAF2FD),
+        border = BorderStroke(1.dp, Color(0xFFDBEAFE)),
+        shadowElevation = 0.dp
     ) {
         Row(
             modifier = Modifier
