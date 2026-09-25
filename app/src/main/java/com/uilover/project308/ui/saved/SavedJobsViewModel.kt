@@ -128,8 +128,36 @@ class SavedJobsViewModel : ViewModel() {
             }
             is SavedJobsAction.BookmarkToggled -> {
                 val isNowBookmarked = DemoCareerRepository.toggleBookmark(action.jobId)
+                val targetJob = allJobs.find { it.id == action.jobId }
                 val updatedAll = allJobs.map {
                     if (it.id == action.jobId) it.copy(isBookmarked = isNowBookmarked) else it
+                }
+                val activeSaved = updatedAll.filter { it.isBookmarked }
+                val filtered = applyFilter(activeSaved, _uiState.value.selectedFilter)
+                val avgScore = if (activeSaved.isNotEmpty()) {
+                    activeSaved.map { it.matchScore }.average().toInt()
+                } else 0
+
+                val feedbackMsg = if (isNowBookmarked) {
+                    "Saved to bookmarks!"
+                } else {
+                    "Removed ${targetJob?.roleTitle ?: "role"} from saved."
+                }
+
+                _uiState.update {
+                    it.copy(
+                        savedJobs = filtered,
+                        totalSavedCount = activeSaved.size,
+                        averageMatchScore = avgScore,
+                        feedbackMessage = feedbackMsg,
+                        lastUnbookmarkedJobId = if (!isNowBookmarked) action.jobId else null
+                    )
+                }
+            }
+            is SavedJobsAction.UndoBookmark -> {
+                DemoCareerRepository.setBookmarked(action.jobId, true)
+                val updatedAll = allJobs.map {
+                    if (it.id == action.jobId) it.copy(isBookmarked = true) else it
                 }
                 val activeSaved = updatedAll.filter { it.isBookmarked }
                 val filtered = applyFilter(activeSaved, _uiState.value.selectedFilter)
@@ -142,7 +170,7 @@ class SavedJobsViewModel : ViewModel() {
                         savedJobs = filtered,
                         totalSavedCount = activeSaved.size,
                         averageMatchScore = avgScore,
-                        feedbackMessage = if (isNowBookmarked) "Role bookmarked" else "Role removed from Saved"
+                        lastUnbookmarkedJobId = null
                     )
                 }
             }
@@ -161,15 +189,19 @@ class SavedJobsViewModel : ViewModel() {
     private fun applyFilter(jobs: List<JobMatch>, filter: SavedJobsFilter): List<JobMatch> {
         return when (filter) {
             SavedJobsFilter.ALL -> jobs
-            SavedJobsFilter.TOP_MATCH -> jobs.filter { it.matchScore >= 94 }
+            SavedJobsFilter.TOP_MATCH -> jobs.filter { it.matchScore >= 93 }
             SavedJobsFilter.REMOTE -> jobs.filter {
-                it.location.contains("Remote", ignoreCase = true) || it.location.contains("Hybrid", ignoreCase = true)
+                val loc = it.location.lowercase()
+                val type = it.employmentType.lowercase()
+                loc.contains("remote") || loc.contains("hybrid") || type.contains("remote") || type.contains("hybrid")
             }
             SavedJobsFilter.ENGINEERING -> jobs.filter {
-                it.roleTitle.contains("Engineer", ignoreCase = true) || it.roleTitle.contains("Architect", ignoreCase = true)
+                val title = it.roleTitle.lowercase()
+                title.contains("engineer") || title.contains("architect") || title.contains("swe")
             }
             SavedJobsFilter.DESIGN -> jobs.filter {
-                it.roleTitle.contains("UX", ignoreCase = true) || it.roleTitle.contains("Designer", ignoreCase = true)
+                val title = it.roleTitle.lowercase()
+                title.contains("ux") || title.contains("design")
             }
         }
     }

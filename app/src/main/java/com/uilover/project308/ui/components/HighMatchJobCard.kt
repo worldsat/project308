@@ -1,29 +1,30 @@
 package com.uilover.project308.ui.components
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.BookmarkBorder
-import androidx.compose.material.icons.outlined.HomeWork
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Schedule
@@ -39,8 +40,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
@@ -49,21 +48,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.uilover.project308.data.model.JobMatch
-import com.uilover.project308.ui.theme.AppShapes
-import com.uilover.project308.ui.theme.OnPrimary
 import com.uilover.project308.ui.theme.OnSurface
 import com.uilover.project308.ui.theme.OnSurfaceVariant
 import com.uilover.project308.ui.theme.Outline
 import com.uilover.project308.ui.theme.OutlineVariant
 import com.uilover.project308.ui.theme.Primary
-import com.uilover.project308.ui.theme.Spacing
 import com.uilover.project308.ui.theme.SurfaceContainerHigh
-import com.uilover.project308.ui.theme.SurfaceContainerLow
-import com.uilover.project308.ui.theme.SurfaceVariant
 
 /**
- * High Match Job Card per design.md §3.4 and rules.md §13.5.
+ * High Match Job Card matching Flutter's high_match_job_card.dart 1:1.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HighMatchJobCard(
     job: JobMatch,
@@ -77,296 +72,259 @@ fun HighMatchJobCard(
             .fillMaxWidth()
             .shadow(
                 elevation = 2.dp,
-                shape = RoundedCornerShape(18.dp),
-                spotColor = Primary.copy(alpha = 0.06f)
+                shape = RoundedCornerShape(16.dp),
+                spotColor = Color.Black.copy(alpha = 0.04f)
             )
             .clickable(role = Role.Button, onClick = onJobClick),
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceVariant),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
         border = BorderStroke(1.dp, Outline)
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            // Main Top Section
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(all = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Header Row: Company Logo + Title + Bookmark
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
             ) {
-                // Header: Logo + Company & Title + Bookmark
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    // Logo Box (44x44, radius 12dp, 1dp outlineVariant border, 7dp padding)
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.White)
+                            .border(1.dp, OutlineVariant, RoundedCornerShape(12.dp))
+                            .padding(7.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        // Company Logo Container
-                        Box(
-                            modifier = Modifier
-                                .size(46.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(SurfaceVariant)
-                                .border(1.dp, OutlineVariant, RoundedCornerShape(12.dp)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Image(
-                                painter = painterResource(id = job.companyLogoRes),
-                                contentDescription = job.companyName,
-                                modifier = Modifier
-                                    .size(34.dp)
-                                    .padding(2.dp),
-                                contentScale = ContentScale.Fit
-                            )
-                        }
-
-                        Column(modifier = Modifier.weight(1f)) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Text(
-                                    text = job.companyName,
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = OnSurfaceVariant,
-                                        fontSize = 12.sp
-                                    )
-                                )
-
-                                if (job.isVerified) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Verified,
-                                        contentDescription = "Verified",
-                                        tint = Primary,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(2.dp))
-
-                            Text(
-                                text = job.roleTitle,
-                                style = MaterialTheme.typography.headlineSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = OnSurface,
-                                    fontSize = 16.sp
-                                ),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
+                        Image(
+                            painter = painterResource(id = job.companyLogoRes),
+                            contentDescription = job.companyName,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Fit
+                        )
                     }
 
-                    // Bookmark Button
-                    IconButton(
-                        onClick = onBookmarkToggle,
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(SurfaceContainerLow)
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        Icon(
-                            imageVector = if (job.isBookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
-                            contentDescription = if (job.isBookmarked) "Remove bookmark" else "Bookmark job",
-                            tint = if (job.isBookmarked) Primary else OnSurfaceVariant,
-                            modifier = Modifier.size(20.dp)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = job.companyName,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    color = OnSurfaceVariant,
+                                    fontSize = 12.sp
+                                )
+                            )
+                            if (job.isVerified) {
+                                Icon(
+                                    imageVector = Icons.Filled.Verified,
+                                    contentDescription = "Verified company",
+                                    tint = Primary,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                            }
+                        }
+
+                        Text(
+                            text = job.roleTitle,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = OnSurface,
+                                fontSize = 15.sp
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
 
-                // Salary & Meta Badges Row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                // Bookmark Toggle Button
+                IconButton(
+                    onClick = onBookmarkToggle,
+                    modifier = Modifier.size(32.dp)
                 ) {
-                    // Salary
+                    Icon(
+                        imageVector = if (job.isBookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
+                        contentDescription = if (job.isBookmarked) "Remove bookmark" else "Bookmark role",
+                        tint = if (job.isBookmarked) Primary else OnSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            // Info Badges (Salary, Location, Employment Type)
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                // Salary
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Payments,
+                        contentDescription = null,
+                        tint = OnSurfaceVariant,
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Text(
+                        text = job.salaryRange,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.Medium,
+                            color = OnSurfaceVariant,
+                            fontSize = 11.5.sp
+                        )
+                    )
+                }
+
+                // Location
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.LocationOn,
+                        contentDescription = null,
+                        tint = OnSurfaceVariant,
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Text(
+                        text = job.location,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.Medium,
+                            color = OnSurfaceVariant,
+                            fontSize = 11.5.sp
+                        )
+                    )
+                }
+
+                // Employment Type
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Schedule,
+                        contentDescription = null,
+                        tint = OnSurfaceVariant,
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Text(
+                        text = job.employmentType,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.Medium,
+                            color = OnSurfaceVariant,
+                            fontSize = 11.5.sp
+                        )
+                    )
+                }
+            }
+
+            // Perks Chips (RoundedCornerShape 8dp, surfaceContainerHigh)
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                job.perks.forEach { perk ->
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(SurfaceContainerHigh)
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = perk,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Medium,
+                                color = OnSurfaceVariant,
+                                fontSize = 11.sp
+                            )
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(2.dp))
+
+            // Footer Row: Match Score Pill + Apply Now Button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // SecondaryContainer Match Score Pill
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color(0xFFE8F5E9))
+                        .border(1.dp, Color(0xFF00875A).copy(alpha = 0.3f), RoundedCornerShape(20.dp))
+                        .padding(horizontal = 10.dp, vertical = 5.dp)
+                ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.Payments,
+                            imageVector = Icons.Outlined.AutoAwesome,
                             contentDescription = null,
-                            tint = Primary,
-                            modifier = Modifier.size(16.dp)
+                            tint = Color(0xFF00875A),
+                            modifier = Modifier.size(13.dp)
                         )
-                        Text(
-                            text = job.salaryRange,
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                color = OnSurface,
-                                fontSize = 12.5.sp
-                            )
-                        )
-                    }
-
-                    // Location
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(3.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.LocationOn,
-                            contentDescription = null,
-                            tint = OnSurfaceVariant,
-                            modifier = Modifier.size(15.dp)
-                        )
-                        Text(
-                            text = job.location,
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                color = OnSurfaceVariant,
-                                fontSize = 12.sp
-                            )
-                        )
-                    }
-
-                    // Work Type
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(3.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (job.employmentType.contains("Remote", ignoreCase = true)) {
-                                Icons.Outlined.HomeWork
-                            } else {
-                                Icons.Outlined.Schedule
-                            },
-                            contentDescription = null,
-                            tint = OnSurfaceVariant,
-                            modifier = Modifier.size(15.dp)
-                        )
-                        Text(
-                            text = job.employmentType,
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                color = OnSurfaceVariant,
-                                fontSize = 12.sp
-                            )
-                        )
-                    }
-                }
-
-                // Perks Chips
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    job.perks.forEach { perk ->
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(50))
-                                .background(SurfaceContainerHigh)
-                                .padding(horizontal = 9.dp, vertical = 4.dp)
-                        ) {
-                            Text(
-                                text = perk,
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = OnSurfaceVariant,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 11.sp
-                                )
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Card Footer: AI Match Score Gauge & Quick Apply CTA
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(SurfaceContainerLow.copy(alpha = 0.7f))
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Circular Match Score Gauge
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Box(
-                        modifier = Modifier.size(32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        val strokeWidth = 3.dp
-                        Canvas(modifier = Modifier.size(32.dp)) {
-                            // Background track
-                            drawCircle(
-                                color = Color(0xFFDFE3E8),
-                                style = Stroke(width = strokeWidth.toPx())
-                            )
-                            // Progress arc
-                            val sweepAngle = (job.matchScore / 100f) * 360f
-                            drawArc(
-                                color = Primary,
-                                startAngle = -90f,
-                                sweepAngle = sweepAngle,
-                                useCenter = false,
-                                style = Stroke(
-                                    width = strokeWidth.toPx(),
-                                    cap = StrokeCap.Round
-                                )
-                            )
-                        }
-                        Text(
-                            text = "${job.matchScore}",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = Primary,
-                                fontSize = 10.sp
-                            )
-                        )
-                    }
-
-                    Column {
                         Text(
                             text = "${job.matchScore}% Match",
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = OnSurface,
-                                fontSize = 12.sp
-                            )
-                        )
-                        Text(
-                            text = job.matchCaption,
                             style = MaterialTheme.typography.labelSmall.copy(
-                                color = OnSurfaceVariant,
-                                fontSize = 10.sp
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF006644),
+                                fontSize = 11.5.sp
                             )
                         )
                     }
                 }
 
                 // Apply Now Button
-                Row(
+                Box(
                     modifier = Modifier
-                        .clip(AppShapes.ButtonPill)
+                        .clip(RoundedCornerShape(10.dp))
                         .background(Primary)
                         .clickable(role = Role.Button, onClick = onApplyClick)
-                        .padding(horizontal = 14.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
                 ) {
-                    Text(
-                        text = "Apply Now",
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            color = OnPrimary,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 12.sp
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "Apply Now",
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White,
+                                fontSize = 12.sp
+                            )
                         )
-                    )
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
-                        contentDescription = null,
-                        tint = OnPrimary,
-                        modifier = Modifier.size(13.dp)
-                    )
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(13.dp)
+                        )
+                    }
                 }
             }
         }

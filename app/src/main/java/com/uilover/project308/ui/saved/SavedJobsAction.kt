@@ -11,6 +11,7 @@ sealed interface SavedJobsAction {
     data class JobClicked(val jobId: String) : SavedJobsAction
     data class ApplyClicked(val jobId: String) : SavedJobsAction
     data class BookmarkToggled(val jobId: String) : SavedJobsAction
+    data class UndoBookmark(val jobId: String) : SavedJobsAction
     data object CompareWithAiClicked : SavedJobsAction
     data object ExploreJobsClicked : SavedJobsAction
     data class NavTabSelected(val tab: NavTab) : SavedJobsAction

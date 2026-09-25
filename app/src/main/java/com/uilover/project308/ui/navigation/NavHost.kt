@@ -223,6 +223,9 @@ fun SorceNavHost(
                         is JobSearchAction.JobClicked -> {
                             navController.navigate(AppRoute.JobDetail.createRoute(action.jobId))
                         }
+                        is JobSearchAction.ApplyClicked -> {
+                            navController.navigate(AppRoute.JobDetail.createRoute(action.jobId))
+                        }
                         else -> {
                             searchViewModel.onAction(action)
                         }

@@ -138,7 +138,7 @@ object DemoCareerRepository {
             companyLogoRes = R.drawable.amazon_official_logo,
             isVerified = true,
             roleTitle = "Senior Software Engineer",
-            salaryRange = "$120K – $160K / yr",
+            salaryRange = "$160K – $215K / yr",
             location = "Seattle, USA",
             employmentType = "Full-time",
             perks = listOf("Health Insurance", "401(k) Match", "Hybrid"),
@@ -159,6 +159,107 @@ object DemoCareerRepository {
             matchScore = 94,
             matchCaption = "Portfolio aligned",
             isBookmarked = isBookmarked("google_staff_ux")
+        )
+    )
+
+    fun getAllJobs(): List<JobMatch> = listOf(
+        JobMatch(
+            id = "amazon_senior_swe",
+            companyName = "Amazon",
+            companyLogoRes = R.drawable.amazon_official_logo,
+            isVerified = true,
+            roleTitle = "Senior Software Engineer",
+            salaryRange = "$160K – $215K / yr",
+            location = "Seattle, USA",
+            employmentType = "Full-time",
+            perks = listOf("Health Insurance", "401(k) Match", "Hybrid"),
+            matchScore = 98,
+            matchCaption = "Strong skill resonance",
+            isBookmarked = isBookmarked("amazon_senior_swe")
+        ),
+        JobMatch(
+            id = "google_staff_ux",
+            companyName = "Google",
+            companyLogoRes = R.drawable.google_official_logo,
+            isVerified = true,
+            roleTitle = "Staff UX Architect",
+            salaryRange = "$155K – $190K / yr",
+            location = "Mountain View, CA",
+            employmentType = "Remote-first",
+            perks = listOf("Design Systems", "Flutter UI", "Equity Included"),
+            matchScore = 94,
+            matchCaption = "Portfolio aligned",
+            isBookmarked = isBookmarked("google_staff_ux")
+        ),
+        JobMatch(
+            id = "google_staff_cloud",
+            companyName = "Google",
+            companyLogoRes = R.drawable.google_official_logo,
+            isVerified = true,
+            roleTitle = "Staff Cloud Architect",
+            salaryRange = "$160K – $210K / yr",
+            location = "Mountain View, CA",
+            employmentType = "Hybrid",
+            perks = listOf("GCP Infra", "Kubernetes", "Health Cover"),
+            matchScore = 96,
+            matchCaption = "Enterprise cloud lead",
+            isBookmarked = isBookmarked("google_staff_cloud")
+        ),
+        JobMatch(
+            id = "microsoft_senior_frontend",
+            companyName = "Microsoft",
+            companyLogoRes = R.drawable.microsoft_official_logo,
+            isVerified = true,
+            roleTitle = "Senior Frontend Engineer",
+            salaryRange = "$130K – $175K / yr",
+            location = "Redmond, WA",
+            employmentType = "Remote",
+            perks = listOf("React 19", "Fluent UI", "Copilot Integration"),
+            matchScore = 94,
+            matchCaption = "AI Copilot UX",
+            isBookmarked = isBookmarked("microsoft_senior_frontend")
+        ),
+        JobMatch(
+            id = "apple_ios_swe",
+            companyName = "Apple",
+            companyLogoRes = R.drawable.apple_official_logo,
+            isVerified = true,
+            roleTitle = "iOS Software Engineer",
+            salaryRange = "$145K – $190K / yr",
+            location = "Cupertino, CA",
+            employmentType = "Hybrid",
+            perks = listOf("Swift 6", "ProMotion 120Hz", "Apple Silicon"),
+            matchScore = 91,
+            matchCaption = "High performance graphics",
+            isBookmarked = isBookmarked("apple_ios_swe")
+        ),
+        JobMatch(
+            id = "meta_ai_engineer",
+            companyName = "Meta",
+            companyLogoRes = R.drawable.sorce_ai_official_logo,
+            isVerified = true,
+            roleTitle = "AI Research Engineer",
+            salaryRange = "$175K – $230K / yr",
+            location = "Menlo Park, CA",
+            employmentType = "Hybrid",
+            perks = listOf("LLaMA", "PyTorch", "Distributed Training"),
+            matchScore = 95,
+            matchCaption = "LLM Fine-tuning",
+            isBookmarked = isBookmarked("meta_ai_engineer")
+        ),
+        JobMatch(
+            id = "netflix_senior_backend",
+            companyName = "Netflix",
+            companyLogoRes = R.drawable.sorce_ai_official_logo,
+            isVerified = true,
+            roleTitle = "Senior Platform Engineer",
+            salaryRange = "$200K – $250K / yr",
+            location = "Los Gatos, CA",
+            employmentType = "Flexible",
+            perks = listOf("All Cash Pay", "AWS Cloud", "High Concurrency"),
+            matchScore = 93,
+            matchCaption = "Streaming architecture",
+            isBookmarked = isBookmarked("netflix_senior_backend")
         )
     )
 

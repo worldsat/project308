@@ -24,5 +24,6 @@ data class SavedJobsUiState(
     val averageMatchScore: Int = 94,
     val urgentCount: Int = 3,
     val selectedNavTab: NavTab = NavTab.SAVED,
-    val feedbackMessage: String? = null
+    val feedbackMessage: String? = null,
+    val lastUnbookmarkedJobId: String? = null
 )

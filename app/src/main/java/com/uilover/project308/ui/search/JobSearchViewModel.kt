@@ -1,7 +1,7 @@
 package com.uilover.project308.ui.search
 
 import androidx.lifecycle.ViewModel
-import com.uilover.project308.R
+import com.uilover.project308.data.model.JobMatch
 import com.uilover.project308.data.repository.DemoCareerRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -9,13 +9,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 /**
- * ViewModel for JobSearchScreen managing state and search interactions per rules.md §14, §18, and §19.
+ * ViewModel for JobSearchScreen managing state and search interactions matching Flutter job_search_screen.dart.
  */
 class JobSearchViewModel : ViewModel() {
 
+    private val initialJobs = DemoCareerRepository.getAllJobs()
+
     private val _uiState = MutableStateFlow(
         JobSearchUiState(
-            jobs = getInitialGroundedJobs()
+            allJobs = initialJobs,
+            filteredJobs = filterJobs(initialJobs, "", "All")
         )
     )
     val uiState: StateFlow<JobSearchUiState> = _uiState.asStateFlow()
@@ -23,160 +26,106 @@ class JobSearchViewModel : ViewModel() {
     fun onAction(action: JobSearchAction) {
         when (action) {
             is JobSearchAction.QueryChanged -> {
-                _uiState.update { it.copy(query = action.query) }
+                _uiState.update { current ->
+                    current.copy(
+                        query = action.query,
+                        filteredJobs = filterJobs(current.allJobs, action.query, current.selectedCategory)
+                    )
+                }
             }
             is JobSearchAction.ClearQueryClicked -> {
-                _uiState.update { it.copy(query = "") }
+                _uiState.update { current ->
+                    current.copy(
+                        query = "",
+                        filteredJobs = filterJobs(current.allJobs, "", current.selectedCategory)
+                    )
+                }
+            }
+            is JobSearchAction.CategorySelected -> {
+                _uiState.update { current ->
+                    current.copy(
+                        selectedCategory = action.category,
+                        filteredJobs = filterJobs(current.allJobs, current.query, action.category)
+                    )
+                }
             }
             is JobSearchAction.FilterChipToggled -> {
-                _uiState.update { it.copy(selectedFilterId = action.chipId) }
-            }
-            is JobSearchAction.SortSelected -> {
-                _uiState.update { it.copy(selectedSort = action.sortOption) }
-            }
-            is JobSearchAction.CycleSortClicked -> {
-                _uiState.update { current ->
-                    val options = current.sortOptions
-                    val currentIndex = options.indexOf(current.selectedSort)
-                    val nextIndex = if (currentIndex >= 0) (currentIndex + 1) % options.size else 0
-                    current.copy(selectedSort = options[nextIndex])
+                val category = when (action.chipId.lowercase()) {
+                    "all" -> "All"
+                    "remote" -> "Remote"
+                    "engineering", "tech_eng" -> "Engineering"
+                    "design" -> "Design"
+                    "data_ai", "data & ai" -> "Data & AI"
+                    "marketing" -> "Marketing"
+                    else -> action.chipId
                 }
+                onAction(JobSearchAction.CategorySelected(category))
+            }
+            is JobSearchAction.ClearFiltersClicked -> {
+                _uiState.update { current ->
+                    current.copy(
+                        query = "",
+                        selectedCategory = "All",
+                        filteredJobs = filterJobs(current.allJobs, "", "All")
+                    )
+                }
+            }
+            is JobSearchAction.AiFilterClicked -> {
+                _uiState.update { it.copy(snackbarMessage = "AI matching filters applied.") }
+            }
+            is JobSearchAction.FilterButtonClicked -> {
+                _uiState.update { it.copy(snackbarMessage = "AI matching filters applied.") }
+            }
+            is JobSearchAction.SnackbarDismissed -> {
+                _uiState.update { it.copy(snackbarMessage = null) }
             }
             is JobSearchAction.BookmarkToggled -> {
                 val newStatus = DemoCareerRepository.toggleBookmark(action.jobId)
                 _uiState.update { current ->
-                    val updatedJobs = current.jobs.map { job ->
-                        if (job.id == action.jobId) {
-                            job.copy(isBookmarked = newStatus)
-                        } else {
-                            job
-                        }
+                    val updatedAll = current.allJobs.map { job ->
+                        if (job.id == action.jobId) job.copy(isBookmarked = newStatus) else job
                     }
-                    current.copy(jobs = updatedJobs)
+                    val updatedFiltered = current.filteredJobs.map { job ->
+                        if (job.id == action.jobId) job.copy(isBookmarked = newStatus) else job
+                    }
+                    current.copy(
+                        allJobs = updatedAll,
+                        filteredJobs = updatedFiltered
+                    )
                 }
-            }
-            is JobSearchAction.AutopilotToggled -> {
-                _uiState.update { it.copy(isAutopilotEnabled = !it.isAutopilotEnabled) }
             }
             is JobSearchAction.NavTabSelected -> {
                 _uiState.update { it.copy(selectedNavTab = action.tab) }
             }
-            is JobSearchAction.FilterButtonClicked -> {
-                // Grounded trigger - no ungrounded filter drawer per rules.md §14.2
-            }
-            is JobSearchAction.JobClicked -> {
-                // Handled in navigation layer
-            }
-            is JobSearchAction.NotificationsClicked -> {
-                // Notification bell feedback
-            }
+            is JobSearchAction.JobClicked,
+            is JobSearchAction.ApplyClicked,
+            is JobSearchAction.NotificationsClicked,
             is JobSearchAction.ProfileClicked -> {
-                // Profile avatar feedback
+                // Handled in navigation layer
             }
         }
     }
 
     companion object {
-        fun getInitialGroundedJobs(): List<SearchJobItem> = listOf(
-            SearchJobItem(
-                id = "amazon_senior_swe",
-                companyName = "Amazon",
-                companyLogoRes = R.drawable.amazon_official_logo,
-                isVerified = true,
-                roleTitle = "Senior Software Engineer",
-                salaryRange = "$160K - $215K",
-                salaryUnit = "/ yr",
-                postedTime = "3 hours ago",
-                location = "Seattle, WA",
-                workStyle = "Hybrid",
-                tags = listOf("Full-time", "Distributed Systems"),
-                highlightTag = "High Match",
-                matchScore = 98,
-                isBookmarked = DemoCareerRepository.isBookmarked("amazon_senior_swe")
-            ),
-            SearchJobItem(
-                id = "google_staff_ux",
-                companyName = "Google",
-                companyLogoRes = R.drawable.google_official_logo,
-                isVerified = true,
-                roleTitle = "Staff UX Architect",
-                salaryRange = "$155K - $190K",
-                salaryUnit = "/ yr",
-                postedTime = "1 day ago",
-                location = "Mountain View, CA",
-                workStyle = "Remote",
-                isRemote = true,
-                tags = listOf("Full-time", "Design Systems"),
-                highlightTag = "Portfolio Aligned",
-                matchScore = 94,
-                isBookmarked = DemoCareerRepository.isBookmarked("google_staff_ux")
-            ),
-            SearchJobItem(
-                id = "google_staff_cloud",
-                companyName = "Google",
-                companyLogoRes = R.drawable.google_official_logo,
-                isVerified = true,
-                roleTitle = "Staff Cloud Architect",
-                salaryRange = "$160K - $210K",
-                salaryUnit = "/ yr",
-                postedTime = "2 days ago",
-                location = "Mountain View, CA",
-                workStyle = "Hybrid",
-                tags = listOf("Full-time", "Staff Level"),
-                highlightTag = "GCP",
-                matchScore = 96,
-                isBookmarked = DemoCareerRepository.isBookmarked("google_staff_cloud")
-            ),
-            SearchJobItem(
-                id = "microsoft_senior_frontend",
-                companyName = "Microsoft",
-                companyLogoRes = R.drawable.microsoft_official_logo,
-                isVerified = true,
-                roleTitle = "Senior Frontend Engineer",
-                salaryRange = "$130K - $175K",
-                salaryUnit = "/ yr",
-                postedTime = "5 hours ago",
-                location = "Redmond, WA",
-                workStyle = "Remote",
-                isRemote = true,
-                tags = listOf("Full-time", "React / TS"),
-                highlightTag = "AI Recommended",
-                matchScore = 94,
-                isBookmarked = DemoCareerRepository.isBookmarked("microsoft_senior_frontend")
-            ),
-            SearchJobItem(
-                id = "stripe_product_designer",
-                companyName = "Stripe",
-                isStripeMonogram = true,
-                isVerified = true,
-                roleTitle = "Product Designer II",
-                salaryRange = "$125K - $155K",
-                salaryUnit = "/ yr",
-                postedTime = "Just now",
-                isJustNow = true,
-                location = "San Francisco, CA",
-                workStyle = "On-site",
-                tags = listOf("Full-time", "Design Systems"),
-                highlightTag = "Figma",
-                matchScore = 89,
-                isBookmarked = DemoCareerRepository.isBookmarked("stripe_product_designer")
-            ),
-            SearchJobItem(
-                id = "apple_ios_swe",
-                companyName = "Apple",
-                companyLogoRes = R.drawable.apple_official_logo,
-                isVerified = true,
-                roleTitle = "iOS Software Engineer",
-                salaryRange = "$145K - $190K",
-                salaryUnit = "/ yr",
-                postedTime = "1 day ago",
-                location = "Cupertino, CA",
-                workStyle = "Hybrid",
-                tags = listOf("Full-time", "SwiftUI"),
-                highlightTag = "Native",
-                matchScore = 91,
-                isBookmarked = DemoCareerRepository.isBookmarked("apple_ios_swe")
-            )
-        )
+        fun filterJobs(allJobs: List<JobMatch>, query: String, category: String): List<JobMatch> {
+            val q = query.trim().lowercase()
+            val cat = category.trim()
+            return allJobs.filter { job ->
+                val matchesQuery = q.isEmpty() ||
+                    job.roleTitle.lowercase().contains(q) ||
+                    job.companyName.lowercase().contains(q) ||
+                    job.location.lowercase().contains(q) ||
+                    job.perks.any { it.lowercase().contains(q) }
+
+                val matchesCategory = cat == "All" ||
+                    (cat == "Remote" && (job.employmentType.lowercase().contains("remote") || job.location.lowercase().contains("remote"))) ||
+                    (cat == "Engineering" && (job.roleTitle.lowercase().contains("engineer") || job.roleTitle.lowercase().contains("swe"))) ||
+                    (cat == "Design" && (job.roleTitle.lowercase().contains("ux") || job.roleTitle.lowercase().contains("design"))) ||
+                    (cat == "Data & AI" && (job.roleTitle.lowercase().contains("ai") || job.roleTitle.lowercase().contains("cloud") || job.roleTitle.lowercase().contains("data"))) ||
+                    (cat == "Marketing" && job.roleTitle.lowercase().contains("marketing"))
+
+                matchesQuery && matchesCategory
+            }
+        }
     }
 }

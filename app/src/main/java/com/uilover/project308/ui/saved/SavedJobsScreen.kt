@@ -8,6 +8,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -28,27 +30,26 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.outlined.ArrowForward
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.BookmarkBorder
-import androidx.compose.material.icons.outlined.LocationOn
-import androidx.compose.material.icons.outlined.Payments
-import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -64,6 +65,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
@@ -75,7 +77,6 @@ import com.uilover.project308.ui.theme.AppShapes
 import com.uilover.project308.ui.theme.OnSurface
 import com.uilover.project308.ui.theme.OnSurfaceVariant
 import com.uilover.project308.ui.theme.Outline
-import com.uilover.project308.ui.theme.OutlineVariant
 import com.uilover.project308.ui.theme.Primary
 import com.uilover.project308.ui.theme.PrimaryContainer
 import com.uilover.project308.ui.theme.Project308Theme
@@ -86,8 +87,9 @@ import com.uilover.project308.ui.theme.Surface
 import com.uilover.project308.ui.theme.SurfaceContainerHigh
 
 /**
- * SavedJobsScreen for Sorce Career AI per design.md §2 and rules.md §18.
- * Displays bookmarked jobs, AI match resonance summary, deadline surge alerts, and quick apply actions.
+ * SavedJobsScreen for Sorce Career AI faithfully matching the Flutter implementation.
+ * Displays bookmarked jobs, AI match resonance summary banner, category filter pills,
+ * rich cards with View Details & Quick Apply buttons, and an empty state.
  */
 @Composable
 fun SavedJobsScreen(
@@ -99,7 +101,23 @@ fun SavedJobsScreen(
 
     LaunchedEffect(state.feedbackMessage) {
         state.feedbackMessage?.let { msg ->
-            snackbarHostState.showSnackbar(msg)
+            val result = if (state.lastUnbookmarkedJobId != null) {
+                snackbarHostState.showSnackbar(
+                    message = msg,
+                    actionLabel = "Undo",
+                    duration = SnackbarDuration.Short
+                )
+            } else {
+                snackbarHostState.showSnackbar(
+                    message = msg,
+                    duration = SnackbarDuration.Short
+                )
+            }
+            if (result == SnackbarResult.ActionPerformed) {
+                state.lastUnbookmarkedJobId?.let { id ->
+                    onAction(SavedJobsAction.UndoBookmark(id))
+                }
+            }
             onAction(SavedJobsAction.DismissFeedback)
         }
     }
@@ -139,7 +157,7 @@ fun SavedJobsScreen(
                     Box(modifier = Modifier.padding(horizontal = Spacing.md)) {
                         AiSavedRadarBanner(
                             averageMatchScore = state.averageMatchScore,
-                            urgentCount = state.urgentCount,
+                            totalCount = state.totalSavedCount,
                             onCompareClick = { onAction(SavedJobsAction.CompareWithAiClicked) }
                         )
                     }
@@ -182,7 +200,7 @@ fun SavedJobsScreen(
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
                                 color = OnSurface,
-                                fontSize = 16.sp
+                                fontSize = 15.sp
                             )
                         )
 
@@ -209,7 +227,7 @@ fun SavedJobsScreen(
                 }
             } else {
                 items(state.savedJobs, key = { it.id }) { job ->
-                    Box(modifier = Modifier.padding(horizontal = Spacing.md)) {
+                    Box(modifier = Modifier.padding(horizontal = Spacing.md, vertical = 2.dp)) {
                         SavedJobCard(
                             job = job,
                             onCardClick = { onAction(SavedJobsAction.JobClicked(job.id)) },
@@ -221,14 +239,14 @@ fun SavedJobsScreen(
             }
 
             item {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(20.dp))
             }
         }
     }
 }
 
 /**
- * Custom Top App Bar for Saved Jobs screen.
+ * Custom Top App Bar matching Flutter Saved Jobs screen.
  */
 @Composable
 private fun SavedTopAppBar(
@@ -239,13 +257,14 @@ private fun SavedTopAppBar(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = Surface
+        color = Color.White,
+        shadowElevation = 0.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
-                .padding(horizontal = Spacing.md),
+                .padding(horizontal = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -255,7 +274,7 @@ private fun SavedTopAppBar(
             ) {
                 IconButton(
                     onClick = onBackClick,
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -275,16 +294,16 @@ private fun SavedTopAppBar(
 
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(50))
+                        .clip(RoundedCornerShape(12.dp))
                         .background(PrimaryContainer)
-                        .padding(horizontal = 8.dp, vertical = 2.5.dp)
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
-                        text = "$savedCount Saved",
+                        text = "$savedCount Bookmarked",
                         style = MaterialTheme.typography.labelSmall.copy(
                             color = Primary,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 10.5.sp
+                            fontSize = 11.sp
                         )
                     )
                 }
@@ -292,13 +311,13 @@ private fun SavedTopAppBar(
 
             IconButton(
                 onClick = onCompareClick,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(48.dp)
             ) {
                 Icon(
                     imageVector = Icons.Outlined.AutoAwesome,
                     contentDescription = "Compare with AI",
                     tint = Primary,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
         }
@@ -306,160 +325,160 @@ private fun SavedTopAppBar(
 }
 
 /**
- * AI Saved Radar Banner summarizing average fit and active surge deadlines.
+ * AI Saved Radar Banner matching Flutter's exact hero container, gradient, and full-width button.
  */
 @Composable
 private fun AiSavedRadarBanner(
     averageMatchScore: Int,
-    urgentCount: Int,
+    totalCount: Int,
     onCompareClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .shadow(
                 elevation = 6.dp,
-                shape = AppShapes.CardHero,
-                spotColor = Primary.copy(alpha = 0.35f)
-            ),
-        shape = AppShapes.CardHero,
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.22f))
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF0B63F6),
-                            Color(0xFF0952D1),
-                            Color(0xFF043399)
-                        )
+                shape = RoundedCornerShape(16.dp),
+                spotColor = Primary.copy(alpha = 0.28f)
+            )
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        Color(0xFF0B63F6),
+                        Color(0xFF004ECC)
                     )
                 )
-                .padding(18.dp)
+            )
+            .padding(18.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.Start
         ) {
-            Column(
+            // Top Row: Radar Icon + Title + Avg Fit Pill
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Header status pill
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Row(
+                    Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(50))
-                            .background(Color.White.copy(alpha = 0.16f))
-                            .border(1.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(50))
-                            .padding(horizontal = 10.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.2f)),
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.AutoAwesome,
+                            imageVector = Icons.Filled.Radar,
                             contentDescription = null,
-                            tint = Color(0xFFA5F3FC),
-                            modifier = Modifier.size(13.dp)
-                        )
-                        Text(
-                            text = "AI Resonance Radar",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                color = Color.White,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 11.sp
-                            )
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
                         )
                     }
 
                     Text(
-                        text = "⚡ $urgentCount roles surging",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            color = Color(0xFFFDE047),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 11.sp
+                        text = "AI Match Resonance Radar",
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            color = Color.White,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.ExtraBold
                         )
                     )
                 }
 
-                // Main headline & resonance metric
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Secondary)
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "$averageMatchScore% Average Fit",
-                            style = MaterialTheme.typography.headlineMedium.copy(
-                                color = Color.White,
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 22.sp
-                            )
+                    Text(
+                        text = "$averageMatchScore% Avg Fit",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.ExtraBold
                         )
-                        Spacer(modifier = Modifier.height(3.dp))
-                        Text(
-                            text = "Your saved roles are highly aligned with your cloud and frontend skill matrix.",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                color = Color.White.copy(alpha = 0.88f),
-                                fontSize = 12.sp,
-                                lineHeight = 16.sp
-                            ),
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(12.dp))
-
-                    ElevatedButton(
-                        onClick = onCompareClick,
-                        colors = ButtonDefaults.elevatedButtonColors(
-                            containerColor = Color.White,
-                            contentColor = Primary
-                        ),
-                        shape = AppShapes.ButtonPill,
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                        modifier = Modifier.height(36.dp)
-                    ) {
-                        Text(
-                            text = "Compare Roles",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.5.sp
-                            )
-                        )
-                    }
+                    )
                 }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Subtitle
+            Text(
+                text = "You have $totalCount bookmarked positions. 3 roles have fast-filling applicant velocity this week.",
+                style = MaterialTheme.typography.bodySmall.copy(
+                    color = Color.White,
+                    fontSize = 12.5.sp,
+                    lineHeight = 17.5.sp,
+                    fontWeight = FontWeight.Normal
+                )
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Full width Compare Button
+            Button(
+                onClick = onCompareClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(42.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.White,
+                    contentColor = Primary
+                ),
+                contentPadding = PaddingValues(vertical = 10.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.AutoAwesome,
+                    contentDescription = null,
+                    tint = Primary,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Compare Saved Roles with AI",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        color = Primary,
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
             }
         }
     }
 }
 
 /**
- * Filter Chip Pill for Saved Jobs filtering.
+ * Filter Chip Pill for Saved Jobs filtering matching Flutter style.
  */
 @Composable
 private fun SavedFilterPill(
     label: String,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
+            .height(38.dp)
             .clip(RoundedCornerShape(20.dp))
             .background(if (isSelected) Primary else Color.White)
             .border(
-                1.dp,
-                if (isSelected) Primary else Outline,
-                RoundedCornerShape(20.dp)
+                width = 1.dp,
+                color = if (isSelected) Primary else Outline,
+                shape = RoundedCornerShape(20.dp)
             )
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 7.dp),
+            .padding(horizontal = 14.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -467,15 +486,20 @@ private fun SavedFilterPill(
             style = MaterialTheme.typography.labelMedium.copy(
                 color = if (isSelected) Color.White else OnSurface,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                fontSize = 12.sp
+                fontSize = 12.5.sp
             )
         )
     }
 }
 
 /**
- * Rich Saved Job Card.
+ * Rich Saved Job Card matching Flutter's _buildSavedJobCard layout:
+ * Header (Logo, Title, Verified, Company • Location, Bookmark button)
+ * Resonance & Salary Bar
+ * Perks Chips
+ * Actions Row (View Details & Quick Apply)
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SavedJobCard(
     job: JobMatch,
@@ -489,256 +513,239 @@ private fun SavedJobCard(
             .fillMaxWidth()
             .shadow(
                 elevation = 2.dp,
-                shape = AppShapes.CardRegular,
-                spotColor = Color.Black.copy(alpha = 0.04f)
+                shape = RoundedCornerShape(16.dp),
+                spotColor = Color.Black.copy(alpha = 0.02f)
             ),
-        shape = AppShapes.CardRegular,
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = BorderStroke(1.dp, Outline)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(role = Role.Button, onClick = onCardClick)
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Header Row: Logo + Titles + Bookmark Toggle
+            // Header Row: Logo, Title, Bookmark Button
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
+                // Logo 42x42
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color.White)
+                        .border(1.dp, Outline, RoundedCornerShape(10.dp))
+                        .padding(6.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(46.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color.White)
-                            .border(1.dp, OutlineVariant, RoundedCornerShape(12.dp))
-                            .padding(8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    if (job.companyLogoRes != 0) {
                         Image(
                             painter = painterResource(id = job.companyLogoRes),
                             contentDescription = job.companyName,
                             contentScale = ContentScale.Fit,
                             modifier = Modifier.fillMaxSize()
                         )
-                    }
-
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(PrimaryContainer, RoundedCornerShape(6.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text(
-                                text = job.companyName,
-                                style = MaterialTheme.typography.labelMedium.copy(
-                                    color = OnSurfaceVariant,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 12.sp
+                                text = job.companyName.take(1),
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    color = Primary,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 16.sp
                                 )
                             )
-                            if (job.isVerified) {
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Icon(
-                                    imageVector = Icons.Filled.Verified,
-                                    contentDescription = "Verified Company",
-                                    tint = Primary,
-                                    modifier = Modifier.size(13.dp)
-                                )
-                            }
                         }
+                    }
+                }
 
+                Spacer(modifier = Modifier.width(12.dp))
+
+                // Title + Subtitle Column
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
                             text = job.roleTitle,
                             style = MaterialTheme.typography.titleMedium.copy(
+                                fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = OnSurface,
-                                fontSize = 15.sp
+                                color = OnSurface
                             ),
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
                         )
+
+                        if (job.isVerified) {
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.Filled.Verified,
+                                contentDescription = "Verified Company",
+                                tint = Primary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
                     }
-                }
 
-                IconButton(
-                    onClick = onBookmarkToggle,
-                    modifier = Modifier.size(34.dp)
-                ) {
-                    Icon(
-                        imageVector = if (job.isBookmarked) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
-                        contentDescription = "Toggle Bookmark",
-                        tint = if (job.isBookmarked) Primary else OnSurfaceVariant,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-            }
+                    Spacer(modifier = Modifier.height(2.dp))
 
-            // Salary & Location Info Badges
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(SurfaceContainerHigh)
-                        .padding(horizontal = 7.dp, vertical = 3.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Payments,
-                        contentDescription = null,
-                        tint = OnSurfaceVariant,
-                        modifier = Modifier.size(12.dp)
-                    )
                     Text(
-                        text = job.salaryRange,
-                        style = MaterialTheme.typography.labelSmall.copy(
+                        text = "${job.companyName} • ${job.location}",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontSize = 12.sp,
                             color = OnSurfaceVariant,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 11.sp
-                        )
-                    )
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(SurfaceContainerHigh)
-                        .padding(horizontal = 7.dp, vertical = 3.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.LocationOn,
-                        contentDescription = null,
-                        tint = OnSurfaceVariant,
-                        modifier = Modifier.size(12.dp)
-                    )
-                    Text(
-                        text = job.location,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            color = OnSurfaceVariant,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 11.sp
+                            fontWeight = FontWeight.Medium
                         ),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(SurfaceContainerHigh)
-                        .padding(horizontal = 7.dp, vertical = 3.dp)
+                // Bookmark icon button
+                IconButton(
+                    onClick = onBookmarkToggle,
+                    modifier = Modifier.size(28.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.Schedule,
-                        contentDescription = null,
-                        tint = OnSurfaceVariant,
-                        modifier = Modifier.size(12.dp)
-                    )
-                    Text(
-                        text = job.employmentType,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            color = OnSurfaceVariant,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 11.sp
-                        )
+                        imageVector = if (job.isBookmarked) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
+                        contentDescription = "Bookmark",
+                        tint = if (job.isBookmarked) Primary else OnSurfaceVariant,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
 
-            // Perks chips
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                job.perks.take(3).forEach { perk ->
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(Color(0xFFF1F5F9))
-                            .padding(horizontal = 7.dp, vertical = 3.dp)
-                    ) {
-                        Text(
-                            text = perk,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                color = OnSurfaceVariant,
-                                fontSize = 10.5.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        )
-                    }
-                }
-            }
-
-            HorizontalDivider(color = OutlineVariant, thickness = 1.dp)
-
-            // Footer Row: Match Badge + Quick Apply Button
+            // Match Resonance & Compensation Bar
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(50))
+                        .clip(RoundedCornerShape(12.dp))
                         .background(SecondaryContainer)
-                        .padding(horizontal = 9.dp, vertical = 4.dp)
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.AutoAwesome,
+                            imageVector = Icons.Filled.Bolt,
                             contentDescription = null,
-                            tint = Color(0xFF006644),
-                            modifier = Modifier.size(12.dp)
+                            tint = Secondary,
+                            modifier = Modifier.size(13.dp)
                         )
                         Text(
-                            text = "${job.matchScore}% Match",
+                            text = "${job.matchScore}% Resonance",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                color = Color(0xFF006644),
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp
+                                color = Color(0xFF00875A)
                             )
                         )
                     }
                 }
 
-                ElevatedButton(
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Text(
+                    text = job.salaryRange,
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = OnSurface
+                    ),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            // Perks Chips
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                job.perks.forEach { perk ->
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(SurfaceContainerHigh)
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = perk,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = OnSurfaceVariant
+                            )
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Actions Row: View Details & Quick Apply
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedButton(
+                    onClick = onCardClick,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(36.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, Outline),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = OnSurface
+                    ),
+                    contentPadding = PaddingValues(vertical = 8.dp)
+                ) {
+                    Text(
+                        text = "View Details",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    )
+                }
+
+                Button(
                     onClick = onApplyClick,
-                    shape = AppShapes.Button,
-                    colors = ButtonDefaults.elevatedButtonColors(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(36.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(
                         containerColor = Primary,
                         contentColor = Color.White
                     ),
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 7.dp),
-                    modifier = Modifier.height(34.dp)
+                    contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
                     Text(
                         text = "Quick Apply",
                         style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 11.5.sp
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
                         )
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
-                        contentDescription = null,
-                        modifier = Modifier.size(13.dp)
                     )
                 }
             }
@@ -747,7 +754,7 @@ private fun SavedJobCard(
 }
 
 /**
- * Empty State for Saved Jobs screen.
+ * Empty State for Saved Jobs screen matching Flutter implementation.
  */
 @Composable
 private fun SavedJobsEmptyState(
@@ -756,7 +763,7 @@ private fun SavedJobsEmptyState(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = AppShapes.CardRegular,
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = BorderStroke(1.dp, Outline)
     ) {
@@ -764,14 +771,13 @@ private fun SavedJobsEmptyState(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
                 modifier = Modifier
-                    .size(72.dp)
+                    .size(68.dp)
                     .clip(CircleShape)
-                    .background(PrimaryContainer.copy(alpha = 0.7f)),
+                    .background(PrimaryContainer.copy(alpha = 0.5f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -782,6 +788,8 @@ private fun SavedJobsEmptyState(
                 )
             }
 
+            Spacer(modifier = Modifier.height(14.dp))
+
             Text(
                 text = "No Saved Roles Found",
                 style = MaterialTheme.typography.titleMedium.copy(
@@ -791,35 +799,42 @@ private fun SavedJobsEmptyState(
                 )
             )
 
+            Spacer(modifier = Modifier.height(6.dp))
+
             Text(
                 text = "Bookmark top opportunities while exploring or clear your active filter to review your list.",
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodySmall.copy(
                     color = OnSurfaceVariant,
                     fontSize = 12.5.sp,
-                    lineHeight = 17.sp
+                    lineHeight = 17.5.sp
                 )
             )
 
+            Spacer(modifier = Modifier.height(16.dp))
+
             OutlinedButton(
                 onClick = onExploreClick,
-                shape = AppShapes.Button,
+                shape = RoundedCornerShape(12.dp),
                 border = BorderStroke(1.dp, Primary),
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = Primary
-                )
+                ),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
             ) {
                 Icon(
                     imageVector = Icons.Outlined.AutoAwesome,
                     contentDescription = null,
-                    modifier = Modifier.size(14.dp)
+                    modifier = Modifier.size(14.dp),
+                    tint = Primary
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = "Explore AI Recommendations",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp
+                        fontSize = 12.sp,
+                        color = Primary
                     )
                 )
             }
@@ -833,7 +848,9 @@ fun SavedJobsScreenPreview() {
     Project308Theme {
         SavedJobsScreen(
             state = SavedJobsUiState(
-                savedJobs = SavedJobsViewModel().uiState.value.savedJobs
+                savedJobs = SavedJobsViewModel().uiState.value.savedJobs,
+                totalSavedCount = 6,
+                averageMatchScore = 94
             ),
             onAction = {}
         )
